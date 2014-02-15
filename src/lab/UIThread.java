@@ -88,8 +88,10 @@ public class UIThread {
     private JButton sendButton;
     private JList hostList;
     private JScrollPane listPanel;
-    private JTextArea textArea;
+    static JTextArea textArea;
+    static JTextArea statusArea;
     private JScrollPane textPanel;
+    private JScrollPane statusPanel;
     private JLabel lblHosts;
     private JPanel hostPanel;
     private DefaultListModel listModel;
@@ -173,7 +175,7 @@ public class UIThread {
         }
 
         int i = 0;
-        for (Group host : configuration.groups) {
+        for (Group host : configuration.getMyGroups(localName)) {
             if (host.name.equals(localName)) {
                 displayedHostnameList[i] = String.format("%s (youself)", host.name);
             } else {
@@ -200,7 +202,7 @@ public class UIThread {
         System.out.println(c);
         System.out.println("hostnameList :"+hostnameList);
         clockService = ClockFactory.getClockService(c, localName, hostnameList);
-        mp = new MessagePasser(configuration_filename, localName, clockService);
+        mp = new MessagePasser(statusArea,configuration_filename, localName, clockService);
      
         // register watcher for configuration file
         confFile = new File(configuration_filename);
@@ -248,6 +250,7 @@ public class UIThread {
             }
         });
         sendPanel.add(sendButton);
+        sendPanel.setAutoscrolls(true);
         
         
         releaseButton = new JButton("Release");
@@ -298,12 +301,17 @@ public class UIThread {
         listPanel.setViewportView(hostList);
 
         textArea = new JTextArea();
+        statusArea = new JTextArea();
+        statusArea.setText("Status: ");
 
         textPanel = new JScrollPane();
+        statusPanel = new JScrollPane();
         frame.getContentPane().add(textPanel, BorderLayout.CENTER);
         textPanel.setViewportView(textArea);
-
-        lblHosts = new JLabel("Hosts");
+        //frame.getContentPane().add(statusPanel, BorderLayout.CENTER);
+        sendPanel.add(statusArea);
+        //textPanel.setViewportView(statusArea);
+        lblHosts = new JLabel("Groups");
         lblHosts.setFont(new Font("Lucida Grande", Font.PLAIN, 14));
         lblHosts.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblHosts.setAlignmentY(Component.BOTTOM_ALIGNMENT);

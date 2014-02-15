@@ -153,12 +153,7 @@ public class Whisper {
         constructor.addTypeDescription(carDescription);
         Yaml yamlParser = new Yaml(constructor);
 
-        configuration = (Configuration) yamlParser.load(in);
-        configuration.initialize();
-
-        hostnameList = new String[configuration.groups.size()];
-        newMsgHostnameList = new String[configuration.groups.size()];
-        displayedHostnameList = new String[configuration.groups.size()];
+        
         
         option.put(clocks[0], Clock.LOGICAL);
         option.put(clocks[1], Clock.VECTOR);
@@ -169,6 +164,12 @@ public class Whisper {
         while (!configuration.hostMap.containsKey(localName)) {
             localName = getInput("Invalid local name\nPlease enter your local name:", "Welcome", JOptionPane.WARNING_MESSAGE);
         }
+        configuration = (Configuration) yamlParser.load(in);
+        configuration.initialize();
+
+        hostnameList = new String[configuration.groups.size()];
+        newMsgHostnameList = new String[configuration.groups.size()];
+        displayedHostnameList = new String[configuration.groups.size()];
 
         int i = 0;
         for (Group host : configuration.groups) {
@@ -195,7 +196,7 @@ public class Whisper {
         Clock c = option.get(getClock("Select Clock", "Welcome", JOptionPane.INFORMATION_MESSAGE, clocks));
         System.out.println(c);
         clockService = ClockFactory.getClockService(c, localName, tempArr);
-        mp = new MessagePasser(configuration_filename, localName, clockService);
+        mp = new MessagePasser(null,configuration_filename, localName, clockService);
      
         // register watcher for configuration file
         confFile = new File(configuration_filename);

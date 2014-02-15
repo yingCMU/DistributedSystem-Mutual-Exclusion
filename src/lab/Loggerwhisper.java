@@ -78,7 +78,7 @@ public class Loggerwhisper {
 
 		clockService = ClockFactory.getClockService(option.get(clocktype), localName, tempArr);
 		try {
-			mp = new MessagePasser(configuration_filename, localName, clockService);
+			mp = new MessagePasser(null,configuration_filename, localName, clockService);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

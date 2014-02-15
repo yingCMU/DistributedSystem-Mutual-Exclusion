@@ -14,9 +14,9 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 /*
  * Configuration
- * Author: Qian Mao (qianm)
+ * Author: Ying Li (yingl2)
  *         Utsav Drolia (udrolia)
- * Date: 1/18/2014
+ * Date: 2/15/2014
  */
 
 public class Configuration {
@@ -24,6 +24,7 @@ public class Configuration {
     public List<Rule> sendRules = null;
     public List<Rule> receiveRules = null;
     public List<Group> groups = null;
+    public List<Group> myGroups = new ArrayList<Group>();
     public Map<String, Host> hostMap = new HashMap<String, Host>();
     public Map<String, List<String>> groupMap = new HashMap<String, List<String>>();
    
@@ -33,14 +34,26 @@ public class Configuration {
             hostMap.put(host.name, host);
             System.out.println("host: "+host.name+" memberOf: "+host.memberOf);
         }
-        
         for (Group group : groups)
         {
-        	System.out.println("Group:"+ group.name + " Members:" + group.members.toString());
+        		System.out.println("Group:"+ group.name + " Members:" + group.members.toString());
+        	
         	groupMap.put(group.name, group.members);
         }
+        
+        
     }
-    
+    public List<Group> getMyGroups(String local_name){
+    	for (Group group : groups)
+        {
+        	if(group.members.contains(local_name)){
+        		System.out.println("Group:"+ group.name + " Members:" + group.members.toString());
+        		myGroups.add(group);
+        	}
+        	groupMap.put(group.name, group.members);
+        }
+    	return myGroups;
+    }
     public static class Group {
     	public String name = null;
     	public List<String> members = null;
@@ -115,8 +128,8 @@ public class Configuration {
         return new BufferedReader(new FileReader(configuration_filename));
     }
      public static void main(String[] args){
-    	configurationParse("./conf.txt");
+    	configurationParse("./conf4.txt");
     	
-    }
-    */
+    }*/
+    
 }

@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JTextArea;
+
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -53,7 +55,7 @@ public class MessagePasser {
     private ClockService clockService = null;
     LockState state = LockState.RELEASED;
     boolean voted = false;
-    ArrayList<String> myGroups = null;
+    ArrayList<String> myGroupNames = null;
     HashMap<String,HashSet<String>> voteLists = new HashMap<String,HashSet<String>>();// track ack
 	
     private ConcurrentLinkedQueue<TimeStampedMessage> deliveryBuffer = new ConcurrentLinkedQueue<TimeStampedMessage>();
@@ -75,11 +77,12 @@ public class MessagePasser {
     private int currentSeqNum = -1;
     private Configuration conf = null;
     private TCPNetCommThreaded comm = null;
+	private JTextArea statusArea;
     public void releaseLock(){
     	System.out.println("!!!!!!!! "+local_name+" : releasing lock");
     	MultiCastMessage release = new MultiCastMessage( "this is release msg ");
     	release.setLockType(LockType.RELEASE);
-		multiSend(release,myGroups.get(0));
+		multiSend(release,myGroupNames.get(0));
 		state = LockState.RELEASED;
     }
     public void requestLock(){
@@ -88,11 +91,12 @@ public class MessagePasser {
     	MultiCastMessage request = new MultiCastMessage( "this is request msg ");
     	request.setLockType(LockType.REQUEST);
     	request.setKind("request");
-    	multiSend(request,myGroups.get(0));
+    	multiSend(request,myGroupNames.get(0));
     }
     
-    public MessagePasser(String configuration_filename, String local_name, ClockService clockService) throws Exception {
-        this.configuration_filename = configuration_filename;
+    public MessagePasser(JTextArea statusArea, String configuration_filename, String local_name, ClockService clockService) throws Exception {
+        this.statusArea = statusArea;
+    	this.configuration_filename = configuration_filename;
         this.local_name = local_name;
         this.clockService = clockService;
         
@@ -150,7 +154,7 @@ public class MessagePasser {
             
             conf = (Configuration) yamlParser.load(in);
             conf.initialize();
-            myGroups = (ArrayList<String>) conf.hostMap.get(local_name).memberOf;
+            myGroupNames = (ArrayList<String>) conf.hostMap.get(local_name).memberOf;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -404,8 +408,13 @@ public class MessagePasser {
         		//System.out.println("##msg not null: "+msg.toString());
         		if(msg.getLockType()==LockType.REQUEST){
         			System.out.println("## receive request from "+msg.getSource());
+        			 String displayMsg = String.format("%s: receive request from %s\n", local_name,msg.getSource());
+	                    UIThread.textArea.append(displayMsg);
+					
         			if(state == LockState.HELD || voted == true){
         				System.out.println("##held or voted, adding request to queue+"+msg.getRequestTS());
+        				 displayMsg = String.format("%s: held or voted, adding request to queue\n", local_name);
+	                    UIThread.statusArea.append(displayMsg);
         				Request e = new Request(msg.getRequestTS().getTime(),msg.getSource());
         				requestQueue.add(e);
         			}
@@ -413,6 +422,12 @@ public class MessagePasser {
         				TimeStampedMessage vote = new TimeStampedMessage(msg.getSource(), null, "this is vote msg from "+local_name, null);
         				vote.setLockType(LockType.VOTE);
         				System.out.println("## voting for "+msg.getSource());
+        				 displayMsg = String.format("%s: voting for %s\n", local_name,msg.getSource());
+ 	                    UIThread.textArea.append(displayMsg);
+ 	                   displayMsg = String.format("%s: voted for %s\n", local_name,msg.getSource());
+	                    
+ 	                   UIThread.statusArea.append(displayMsg);
+         				
         				try {
 							send(vote);
 						} catch (UnknownHostException e) {
@@ -425,13 +440,21 @@ public class MessagePasser {
         		}
         		else if(msg.getLockType()==LockType.RELEASE){
         			System.out.println("## release received from "+msg.getSource());
-        			if(!requestQueue.isEmpty()){
+        			 String displayMsg = String.format("%s: vrelease received from  %s\n", local_name,msg.getSource());
+	                    UIThread.textArea.append(displayMsg);
+	                    displayMsg = String.format("%s: release  from %s\n", local_name,msg.getSource());
+	                    
+	 	                   UIThread.statusArea.append(displayMsg);
+      				if(!requestQueue.isEmpty()){
         				System.out.println("## request queue not empty");
         				timeSort(requestQueue);
     					Request head = requestQueue.poll();
     					TimeStampedMessage vote = new TimeStampedMessage(head.name, null, "this is vote msg from "+local_name, null);
     					vote.setLockType(LockType.VOTE);
     					System.out.println("## voting for "+head.name);
+    					displayMsg = String.format("%s: voted for  %s\n", local_name,msg.getSource());
+	                    UIThread.statusArea.append(displayMsg);
+	                    UIThread.textArea.append(displayMsg);
     					try {
 							send(vote);
 						} catch (UnknownHostException e) {
@@ -463,7 +486,7 @@ public class MessagePasser {
             TimeStampedMessage message;
 			while ((message=delayReceiveBuffer.peek()) != null) {
             	if(message.getLockType()==LockType.VOTE)
-            		recvVote(message,myGroups.get(0));
+            		recvVote(message,myGroupNames.get(0));
             	else
                 	receiveBuffer.offer(delayReceiveBuffer.poll());
             }
@@ -530,7 +553,7 @@ public class MessagePasser {
                     if (isNormal)  
                     {
 	                        receiveBuffer.offer(message);
-	                        recvVote(message,myGroups.get(0));
+	                        recvVote(message,myGroupNames.get(0));
 	                        // push all delayed message into buffer
 	                        receiveAllDelayedMsg();
                     	
@@ -568,15 +591,22 @@ public class MessagePasser {
         
         	if(msg.getLockType()==LockType.VOTE){
         		System.out.println("recved VOTE from "+msg.getSource());
+        		 String displayMsg = String.format("%s: recved VOTE from %s\n", local_name,msg.getSource());
+                 UIThread.textArea.append(displayMsg);
+				
         		synchronized (voteLists) {
         			System.out.println(voteLists.get(groupID));
         			System.out.println(msg.getSource());
     				voteLists.get(groupID).add(msg.getSource());
     				if(voteLists.get(groupID).size()==conf.groupMap.get(groupID).size()){
     					System.out.println("!!!!!!!!!!!!!!!!!! "+local_name+" is entering CS");
+    					  displayMsg = String.format("%s: entering CS after got every votes\n", local_name);
+    	                    UIThread.statusArea.append(displayMsg);
     					return true;
     				}
     				System.out.println("!!!!!!blocked, waiting for vote ");
+    				displayMsg = String.format("blocked,still waiting for vote\n");
+                    UIThread.statusArea.append(displayMsg);
     			}
         		
         	}

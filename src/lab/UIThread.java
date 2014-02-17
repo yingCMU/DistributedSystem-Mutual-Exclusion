@@ -265,7 +265,7 @@ public class UIThread {
                         dialogMap.get(currentPartner).append(displayMsg);
                         statusArea.append(displayMsg);
                         // Store it in dialog and send
-                       dialogMap.get(currentPartner).append(displayMsg);
+                      // dialogMap.get(currentPartner).append(displayMsg);
                         return;
                 	}
                     String sendMsg = "this is release msg";

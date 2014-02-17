@@ -238,6 +238,7 @@ public class UIThread {
         sendButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 synchronized (lock) {
+                	
                     String sendMsg = "this is request msg";
                     //String kind = kindField.getText();
                     String displayMsg = String.format("me: %s\n", sendMsg);
@@ -257,6 +258,16 @@ public class UIThread {
         releaseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 synchronized (lock) {
+                	if(mp.state != LockState.HELD){
+                		String displayMsg = String.format("you are not holding lock, not able to send request");
+                        textArea.append(displayMsg);
+                         // Store it in dialog and send
+                        dialogMap.get(currentPartner).append(displayMsg);
+                        statusArea.append(displayMsg);
+                        // Store it in dialog and send
+                       dialogMap.get(currentPartner).append(displayMsg);
+                        return;
+                	}
                     String sendMsg = "this is release msg";
                     String displayMsg = String.format("me: %s\n", sendMsg);
                     textArea.append(displayMsg);

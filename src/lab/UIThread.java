@@ -259,7 +259,7 @@ public class UIThread {
             public void actionPerformed(ActionEvent e) {
                 synchronized (lock) {
                 	if(mp.state != LockState.HELD){
-                		String displayMsg = String.format("you are not holding lock, not able to send request");
+                		String displayMsg = String.format("you are not holding lock, not able to send request\n");
                         textArea.append(displayMsg);
                          // Store it in dialog and send
                         dialogMap.get(currentPartner).append(displayMsg);

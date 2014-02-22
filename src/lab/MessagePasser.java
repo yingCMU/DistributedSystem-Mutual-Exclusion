@@ -452,7 +452,7 @@ public class MessagePasser {
     					TimeStampedMessage vote = new TimeStampedMessage(head.name, null, "this is vote msg from "+local_name, null);
     					vote.setLockType(LockType.VOTE);
     					System.out.println("## voting for "+head.name);
-    					displayMsg = String.format("%s: voted for  %s\n", local_name,msg.getSource());
+    					displayMsg = String.format("%s: voted for  %s\n", local_name,head.name);
 	                    UIThread.statusArea.append(displayMsg);
 	                    UIThread.textArea.append(displayMsg);
     					try {
@@ -467,6 +467,7 @@ public class MessagePasser {
     				else{
     					System.out.println("## request queue empty, not voting");
     					voted = false;
+    					state = LockState.RELEASED;
     				}
         			recvQueue.poll();
         		}
@@ -600,7 +601,9 @@ public class MessagePasser {
     				voteLists.get(groupID).add(msg.getSource());
     				if(voteLists.get(groupID).size()==conf.groupMap.get(groupID).size()){
     					System.out.println("!!!!!!!!!!!!!!!!!! "+local_name+" is entering CS");
-    					  displayMsg = String.format("%s: entering CS after got every votes\n", local_name);
+    					  
+    					state=LockState.HELD;
+    					displayMsg = String.format("%s: entering CS after got every votes\n", local_name);
     	                    UIThread.statusArea.append(displayMsg);
     					return true;
     				}
